@@ -4,6 +4,7 @@
 #include <pico/cyw43_arch.h>
 #include <unity.h>
 #include "signaling.h"
+#include "test_fifo.h"
 
 #define TEST_TASK_PRIORITY      ( tskIDLE_PRIORITY + 1UL )
 #define TEST_TASK_STACK_SIZE configMINIMAL_STACK_SIZE
@@ -132,4 +133,32 @@ int main (void)
                 TEST_RUNNER_STACK_SIZE, NULL, TEST_RUNNER_PRIORITY, NULL);
     vTaskStartScheduler();
 	return 0;
+}
+
+
+
+//Workers
+void signal_handle_calculation(SemaphoreHandle_t request, SemaphoreHandle_t response, struct signal_data *data) {
+    while (1) {
+        if (xSemaphoreTake(request, portMAX_DELAY) == pdTRUE) {
+            data->output = data->input * data->input; 
+            xSemaphoreGive(response);
+        }
+    }
+}
+
+//
+BaseType_t signal_request_calculate(SemaphoreHandle_t request, SemaphoreHandle_t response, struct signal_data *data) {
+    // 1. Give the request semaphore to wake up the calculation worker
+    if (xSemaphoreGive(request) != pdTRUE) {
+        return pdFALSE; // Failed to give semaphore
+    }
+    
+    // 2. Wait for the calculation worker to finish and signal the response
+    // Using a 100ms timeout here as an example instead of portMAX_DELAY for safety
+    if (xSemaphoreTake(response, pdMS_TO_TICKS(100)) == pdTRUE) {
+        return pdTRUE; // Calculation succeeded, data->output is ready
+    }
+    
+    return pdFALSE; // Timeout or failed to receive response
 }
