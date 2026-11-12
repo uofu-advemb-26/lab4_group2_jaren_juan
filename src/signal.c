@@ -3,11 +3,6 @@
 #include <task.h>
 #include "signaling.h"
 
-
-
-
-
-
 void signal_handle_calculation(SemaphoreHandle_t request,
                                SemaphoreHandle_t response,
                                struct signal_data *data){
@@ -24,11 +19,10 @@ void signal_handle_calculation(SemaphoreHandle_t request,
 BaseType_t signal_request_calculate(SemaphoreHandle_t request,
                                     SemaphoreHandle_t response,
                                     struct signal_data *data){
-printf("Starting to signal Response");
-xSemaphoreGive(request,( TickType_t ) 10 ) == pdTRUE);
-printf("Request Calculated");
-BaseType_t response = xSemaphoreTake(response,portMAX_DELAY);
-printf("Responded to the request");
-
-return response;
-                                    }
+	printf("Starting to signal Request\n");
+	xSemaphoreGive(request);
+	printf("Request Calculated\n");
+	BaseType_t result = xSemaphoreTake(response, portMAX_DELAY);
+	printf("Responded to the request\n");
+	return result;
+}
